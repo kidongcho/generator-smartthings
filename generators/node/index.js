@@ -95,6 +95,29 @@ module.exports = class extends BaseGenerator {
 				})
 			},
 
+			// Ask for st-schema template
+			askForStSchemaTemplate: () => {
+				return generator.prompt({
+					type: 'list',
+					name: 'stSchemaTemplate',
+					when: generator._filter({
+						typeIn: ['app-c2c-st-schema']
+					}),
+					message: chalk.hex('#15bfff').bold.underline('Select a template'),
+					choices: [{name: chalk.white.bold('skeleton') + '\tA Skeleton ' + chalk.italic('\n\t\tDevelopment from scratch'),
+						value: 'skeleton'
+					}, {
+						name: chalk.white.bold('c2c-switch') + '\tA Switch Sample ' + chalk.italic('\n\t\tSample template for c2c-switch device handler type'),
+						value: 'c2c-switch'
+					}, {
+						name: chalk.white.bold('c2c-shade') + '\tA Blinder Sample' + chalk.italic('\n\t\tSample template for c2c-shade device handler type'),
+						value: 'c2c-shade'
+					}]
+				}).then(stSchemaTemplateAnswer => {
+					generator.appConfig.stSchemaTemplate = stSchemaTemplateAnswer.stSchemaTemplate
+				})
+			},
+
 			// Ask for app display name ("displayName" in package.json)
 			askForAppDisplayName: () => {
 				const {appDisplayName} = generator.options
@@ -537,9 +560,20 @@ module.exports = class extends BaseGenerator {
 
 		const context = this.appConfig
 		const path = context.name
-		this.fs.copyTpl(this.sourceRoot() + '/index.js', path + '/index.js', context)
+
+		// Copy default : skeleton
+		this.fs.copy(this.sourceRoot() + '/index.js', path + '/index.js', context)
 		this.fs.copyTpl(this.sourceRoot() + '/package.json', path + '/package.json', context)
 		this.fs.copyTpl(this.sourceRoot() + '/README.md', path + '/README.md', context)
+
+		// If user select template
+		if (this.appConfig.stSchemaTemplate !== 'skeleton') {
+			this.fs.copy(
+				this.templatePath(this.sourceRoot() + '/' + this.appConfig.stSchemaTemplate),
+				this.destinationPath('./' + path),
+				{title: 'Overwriting template'}
+			)
+		}
 
 		const pkgJson = {
 			dependencies: {},
